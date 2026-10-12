@@ -22,9 +22,25 @@ jobs:
           gradle-version: '8.9'
 
       - name: Extract project
+        run: unzip -q DoughPizzaAndroid_v2_source.zip
+
+      - name: Fix Java target
         run: |
-          unzip -q DoughPizzaAndroid_v2_source.zip
-          find . -type f \( -name settings.gradle.kts -o -name settings.gradle \)
+          FILE=$(find . -type f \( -path '*/app/build.gradle.kts' -o -path '*/app/build.gradle' \) | head -n 1)
+          if [ -z "$FILE" ]; then
+            echo "File Gradle dell'app non trovato"
+            exit 1
+          fi
+          python3 - "$FILE" <<'PY'
+          import sys
+          p = sys.argv[1]
+          s = open(p).read()
+          s = s.replace("JavaVersion.VERSION_1_8", "JavaVersion.VERSION_17")
+          s = s.replace('sourceCompatibility = "1.8"', 'sourceCompatibility = JavaVersion.VERSION_17')
+          s = s.replace('targetCompatibility = "1.8"', 'targetCompatibility = JavaVersion.VERSION_17')
+          open(p, "w").write(s)
+          print("File corretto:", p)
+          PY
 
       - name: Build APK
         run: |
