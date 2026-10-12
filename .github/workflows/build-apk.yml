@@ -11,29 +11,30 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
 
-      - name: Install unzip
-        run: sudo apt-get update && sudo apt-get install -y unzip
+      - name: Install Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
 
       - name: Extract project
         run: |
           unzip -q DoughPizzaAndroid_v2_source.zip
-          find . -name gradlew -type f
+          find . -type f \( -name settings.gradle.kts -o -name settings.gradle \)
 
       - name: Build APK
         run: |
-          PROJECT=$(find . -name gradlew -type f | head -n 1)
+          PROJECT=$(find . -type f \( -name settings.gradle.kts -o -name settings.gradle \) | head -n 1)
           if [ -z "$PROJECT" ]; then
-            echo "Gradle wrapper non trovato nel progetto"
+            echo "File settings.gradle non trovato"
             exit 1
           fi
           cd "$(dirname "$PROJECT")"
-          chmod +x gradlew
-          ./gradlew assembleDebug
+          gradle assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
