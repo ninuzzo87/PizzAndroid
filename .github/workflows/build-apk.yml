@@ -1,0 +1,43 @@
+name: Build Dough Pizza APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install unzip
+        run: sudo apt-get update && sudo apt-get install -y unzip
+
+      - name: Extract project
+        run: |
+          unzip -q DoughPizzaAndroid_v2_source.zip
+          find . -name gradlew -type f
+
+      - name: Build APK
+        run: |
+          PROJECT=$(find . -name gradlew -type f | head -n 1)
+          if [ -z "$PROJECT" ]; then
+            echo "Gradle wrapper non trovato nel progetto"
+            exit 1
+          fi
+          cd "$(dirname "$PROJECT")"
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Dough-Pizza-APK
+          path: '**/build/outputs/apk/debug/*.apk'
+          if-no-files-found: error
